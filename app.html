@@ -1,0 +1,124 @@
+<head>
+  <title>climate datamap</title>
+  <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+<script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+  <script type='text/javascript' src='tinycolor.js'></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+  <script src="datamaps.world.min.js"></script>
+</head>
+
+<body>
+
+
+  <div class="container container-fluid">
+    <div id="container" class="col-md-10 col-md-offset-1"></div>
+    <div></div>
+      <div id= "slider" class="col-md-4 col-md-offset-4">
+        <h3>Global Climate Change: Year by Year</h3>
+    <input class="bar" type="range" id="rangeinput" value="2016" min="1901" max="2009" onchange="rangevalue.value=value" />
+    <span class="highlight"></span>
+    <output id="rangevalue">1901</output>
+    <h4>double click to get data <br> triple click to save color.</h4> <br>
+      <a href="abraxasrex.github.io"><h5> jonathan reasor, 2015 </h5> </a>
+  </div>
+  </div>
+<body>
+  <script>
+
+
+  $(function () {
+     // your code goes here
+
+  var map= new Datamap({element: document.getElementById('container'),
+  fills: {
+        defaultFill:  '#f0f5f5' //the keys in this object map to the "fillKey" of [data] or [bubbles]
+      },
+  done: function(datamap) {
+
+  datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography, data) {
+
+  var url_single= "http://climatedataapi.worldbank.org/climateweb/rest/v1/country/cru/tas/year/" + geography.id;
+
+  var jqxhr = $.get( url_single, function() {
+    alert( "success" );
+  })
+    .done(function() {
+      var parsed = results.data;
+      for(var i=0; i<parsed.length; i++){
+
+        if(parsed[i].year == document.getElementById("rangeinput").value){
+
+          geography.properties.temp= parsed[i].data;
+          var temp= parsed[i].data + 10;
+          geography.properties.year= parsed[i].year;
+
+          var redness= Math.round(Math.pow(temp, 2)/ 4.9);
+          var blueness= Math.round(200/(Math.pow(temp, 2)));
+          var greenness= Math.round(blueness/5);
+        var color= tinycolor({r:redness, g:greenness, b:blueness});
+        var hexcolor= color.toHexString();
+
+        var m = {};
+        m[geography.id] = hexcolor;
+          datamap.updateChoropleth(m);
+      }
+    else{
+      console.log(err);
+       }
+  };
+
+    })
+
+    .fail(function() {
+      alert( "error" );
+    })
+    .always(function() {
+      alert( "finished" );
+    });
+
+  });
+  },
+  projection: 'mercator',
+  geographyConfig: {
+     dataUrl: null, //if not null, datamaps will fetch the map JSON (currently only supports topojson)
+     hideAntarctica: true,
+     borderWidth: 1,
+     borderOpacity: 1,
+     borderColor: '#334c4c',
+     popupTemplate: function(geo, data) {
+       if(geo.properties.temp){
+         return ['<div class="hoverinfo"><strong>',
+                        geo.properties.name,
+                        ' was <br>',
+                        geo.properties.temp,
+                        '<br> degrees celcius on average in ',
+                        geo.properties.year,
+                        '</strong></div>'].join('');
+       }else{
+         return   ['<div class="hoverinfo"><strong>',
+                        geo.properties.name,
+                        '</strong></div>'].join('');
+       }
+
+     },
+     popupOnHover: true, //disable the popup while hovering
+     highlightOnHover: true,
+     highlightFillColor: '#e0ebeb',
+     highlightBorderColor: 'rgba(250, 15, 160, 0.2)',
+     highlightBorderWidth: 2,
+     highlightBorderOpacity: 1
+  }
+  });
+
+  });
+
+  </script>
+
+</body>
